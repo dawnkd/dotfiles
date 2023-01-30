@@ -1,0 +1,50 @@
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "ctrl+e ctrl+r",
+        "command": "type",
+        "args": { 
+          "text": "if err != nil {\n" 
+        },
+        "when": "editorTextFocus"
+     },
+     {
+      "key": "ctrl+s ctrl+n",
+      "command": "extension.multiCommand.execute",
+      "args": {
+        "sequence": [
+          {
+            "command": "editor.action.insertSnippet",
+            "args": {
+              "snippet": "${TM_SELECTED_TEXT/([A-Z]{2,})(?=[A-Z][a-z]+[0-9]*|$)|([A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+)([- _])?/${1:/downcase}${2:/downcase}_/gm}"
+            },
+          },
+          "deleteLeft"
+        ]
+      },
+      "when": "editorTextFocus && editorHasSelection || renameInputVisible"
+    },
+    { 
+      "key": "ctrl+shift+left",
+      "command": "workbench.action.terminal.kill",
+      "when": "terminalFocus && terminalProcessSupported"
+    },
+    { "key": "ctrl+shift+right",
+      "command": "workbench.action.terminal.split",
+      "when": "terminalFocus && terminalProcessSupported || terminalFocus && terminalWebExtensionContributedProfile" 
+    },
+    { "key": "ctrl+shift+right",
+      "command": "workbench.action.terminal.splitInstance",
+      "when": "terminalProcessSupported && terminalTabsFocus" 
+    },
+    {
+      "key": "ctrl+shift+space",
+      "command": "workbench.action.terminal.focus",
+      "when": "editorTextFocus"
+    },
+    {
+      "key": "ctrl+shift+space",
+      "command": "workbench.action.focusFirstEditorGroup",
+      "when": "terminalFocus",
+    },
+]
