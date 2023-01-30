@@ -148,7 +148,26 @@ echo ${ADDR[$3]}
 get_reasonable_path() {
 p="$(dirs +0)"
 if [[ $(get_reasonable_width) -lt ${#p} ]]; then
-    echo "..."$(split $p / -2)"/"$(split $p / -1)
+    # try to print current and parent dir
+    shorter_p=".../"$(split $p / -2)"/"$(split $p / -1)
+    if [[ ${#shorter_p} -lt $(get_reasonable_width) ]]; then
+        echo $shorter_p
+    else
+        # try to print current dir
+        shorter_p=".../"$(split $p / -1)
+        if [[ $(get_reasonable_width) -lt ${#shorter_p} ]]; then
+            # if path is still too long, shorten it more
+            shorter_p="$(shorten $shorter_p $(($(get_reasonable_width) - 3)))..."
+            if [[ ${#shorter_p} -lt 7 ]]; then
+                # if path is shortened to just "......" don't print anything
+                echo "..."
+            else 
+                echo $shorter_p
+            fi
+        else 
+            echo ".../"$(split $p / -1)
+        fi
+    fi
 else
     echo $p
 fi
@@ -163,7 +182,51 @@ else
 fi
 }
 
-prompt='\e[33;1m\u@\h: \e[32m$(get_reasonable_path)\e[0m \[\e[91m\]$(get_reasonable_git_branch)\[\e[00m\]$ '
+get_reasonable_user_host() {
+u=$(whoami)
+h=$(hostname)
+length=$((${#u} + ${#h} + 1))
+if [[ $(get_reasonable_width) -lt $length ]]; then
+    echo "...@... "
+else
+    echo $u@$h:" "
+fi
+}
+
+function virtualenv_info(){
+    # Get Virtual Env
+    if [[ -n "$VIRTUAL_ENV" ]]; then
+        # Strip out the path and just leave the env name
+        venv="${VIRTUAL_ENV##*/}"
+        if [[ $(get_reasonable_width) -lt $((${#venv} * 2)) ]]; then
+            width=$(($(get_reasonable_width) / 4))
+            venv="$(shorten $venv $width)..."
+        fi
+    else
+        # In case you don't have one activated
+        venv=''
+    fi
+    [[ -n "$venv" ]] && echo "($venv) "
+}
+
+# disable the default virtualenv prompt change
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
+VENV="\$(virtualenv_info)";
+# the '...' are for irrelevant info here.
+
+# print full PS1 if nothing was shortened
+ps1() {
+    v=$(virtualenv_info)
+    u=$(whoami)
+    h=$(hostname)
+    p=$(dirs +0)
+    g=$(parse_git_branch)
+    out="\e[33m$v\e[32;1m$u@$h: \e[34m$p\e[0m \e[91m$g\e[00m$ "
+    echo -e $out
+}
+
+prompt='\e[33m$(virtualenv_info)\e[32;1m$(get_reasonable_user_host)\e[34m$(get_reasonable_path)\e[0m \[\e[91m\]$(get_reasonable_git_branch)\[\e[00m\]$ '
 PS1=$prompt
  
 # Useful after squashing several commits. Updates the current commit's timestamp to NOW.
@@ -202,11 +265,11 @@ export DOCKER_HOST="unix://$DOCKER_SOCK"
 #     fi
 # fi
 
-if [ ! -S "$DOCKER_SOCK" ]; then
-    mkdir -pm o=,ug=rwx "$DOCKER_DIR"
-    chgrp docker "$DOCKER_DIR"
-    wsl.exe -d $DOCKER_DISTRO sh -c "nohup sudo -b dockerd < /dev/null > $DOCKER_DIR/dockerd.log 2>&1"
-fi
+# if [ ! -S "$DOCKER_SOCK" ]; then
+#     mkdir -pm o=,ug=rwx "$DOCKER_DIR"
+#     chgrp docker "$DOCKER_DIR"
+#     wsl.exe -d $DOCKER_DISTRO sh -c "nohup sudo -b dockerd < /dev/null > $DOCKER_DIR/dockerd.log 2>&1"
+# fi
 
 re() {
 PS1=$prompt
@@ -245,9 +308,10 @@ if [[ -z "$XDG_RUNTIME_DIR" ]]; then
   fi
 fi
 
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+# export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+# . "$HOME/.cargo/env"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-. "$HOME/.cargo/env"
