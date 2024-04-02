@@ -117,7 +117,7 @@ if ! shopt -oq posix; then
 fi
 
 # Your best friend of Git log graphs.
-alias glog='git glog --all'
+alias glog='git log --all --graph --pretty="format:%d %Cgreen%h%Creset %an - %s"'
 
 # Terminal prompt helpers
 # shorten a path in $1 to max of $2 characters, appending a "..."
@@ -189,7 +189,7 @@ length=$((${#u} + ${#h} + 1))
 if [[ $(get_reasonable_width) -lt $length ]]; then
     echo "...@... "
 else
-    echo $u@$h:" "
+    echo $u@$h
 fi
 }
 
@@ -226,7 +226,7 @@ ps1() {
     echo -e $out
 }
 
-prompt='\e[33m$(virtualenv_info)\e[32;1m$(get_reasonable_user_host)\e[34m$(get_reasonable_path)\e[0m \[\e[91m\]$(get_reasonable_git_branch)\[\e[00m\]$ '
+prompt='\e[33m$(virtualenv_info)\e[32;1m$(get_reasonable_user_host): \e[34m$(get_reasonable_path)\e[0m \[\e[91m\]$(get_reasonable_git_branch)\[\e[00m\]$ '
 PS1=$prompt
  
 # Useful after squashing several commits. Updates the current commit's timestamp to NOW.
@@ -242,7 +242,7 @@ fix_wsl2_interop() {
     done
 }
 fix_wsl2_interop
-alias win="cd /mnt/c/Users/dawnkaski.david"
+alias win="cd /mnt/c/Users/david.dawnkaski"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -253,7 +253,8 @@ export NVM_DIR="$HOME/.nvm"
 
 # sudo /etc/init.d/dbus start &> /dev/null
 
-DOCKER_DISTRO="Ubuntu"
+# THIS NEEDS TO BE WHATEVER WINDOWS WSL DISTRO IS NAMED
+DOCKER_DISTRO=$WSL_DISTRO_NAME
 DOCKER_DIR=/mnt/wsl/shared-docker
 DOCKER_SOCK="$DOCKER_DIR/docker.sock"
 export DOCKER_HOST="unix://$DOCKER_SOCK"
@@ -265,11 +266,11 @@ export DOCKER_HOST="unix://$DOCKER_SOCK"
 #     fi
 # fi
 
-# if [ ! -S "$DOCKER_SOCK" ]; then
-#     mkdir -pm o=,ug=rwx "$DOCKER_DIR"
-#     chgrp docker "$DOCKER_DIR"
-#     wsl.exe -d $DOCKER_DISTRO sh -c "nohup sudo -b dockerd < /dev/null > $DOCKER_DIR/dockerd.log 2>&1"
-# fi
+if [ ! -S "$DOCKER_SOCK" ]; then
+    mkdir -pm o=,ug=rwx "$DOCKER_DIR"
+    chgrp docker "$DOCKER_DIR"
+    wsl.exe -d $DOCKER_DISTRO sh -c "nohup sudo -b dockerd < /dev/null > $DOCKER_DIR/dockerd.log 2>&1"
+fi
 
 re() {
 PS1=$prompt
@@ -293,6 +294,7 @@ chom() {
 # alias api="cd ~/workspace/kronos/kronos-api"
 alias pipenv="python3 -m pipenv"
 
+export PATH=$PATH:/mnt/c/Program\ Files/Git/bin
 export PATH=$PATH:/usr/local/go/bin
 export PATH="$PATH:$(go env GOPATH)/bin"
 
@@ -308,10 +310,23 @@ if [[ -z "$XDG_RUNTIME_DIR" ]]; then
   fi
 fi
 
-# export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 
-# . "$HOME/.cargo/env"
+alias dps="docker ps --format 'table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}'"
+
+export NVM_DIR="/home/yourusername/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+eval "$(oh-my-posh init bash --config ~/.david.omp.yaml)"
+function set_poshcontext() {
+    export POSH=$(date)
+    export COLS=$(tput cols)
+    export R_COLS=$(get_reasonable_width)
+    export USER_HOST=$(get_reasonable_user_host)
+    export GIT_BRANCH=$(get_reasonable_git_branch)
+}
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+. "$HOME/.cargo/env"
